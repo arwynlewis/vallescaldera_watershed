@@ -50,8 +50,8 @@ The data used in this app was collected and researched by Bob Parmenter and Laur
 The research was motivated by Alex Webster and her analysis of the ecological resilience of the area. 
 The specific data files used in the app are:
 
-* __EFJ turbidity data__: `EFJ_turb.rds`
-* __EFJ dissolved oxygen data__: `EFJ_DO.rds`
+* __EFJ turbidity data__: [EFJ_turb.rds](data/EFJ_turb.rds)
+* __EFJ dissolved oxygen data__: [EFJ_DO.rds](data/EFJ_DO.rds)
 
 ## Contributors
 This app would have not been possible without the data collection done by Laura Crossey and Bob Parmenter, as well as the guidance of
