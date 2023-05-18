@@ -61,6 +61,13 @@ ui <- fluidPage(
         height: auto; /* Maintain aspect ratio */
         margin-right: 10px; /* Add spacing between logos */
       }
+       .watershed {
+        float: right;
+        width: 250px;
+        shape-margin: 20px;
+        margin-right: 20px;
+        margin-bottom: 20px;
+      }
       "
     )
   )),
@@ -186,6 +193,13 @@ ui <- fluidPage(
           such as reservoirs, bays, and the ocean (National Ocean Service). The Valles Caldera Watershed is the drainage basin and surrounding 
           area of the Valles Caldera National Preserve in northern New Mexico. The Valles Caldera Watershed encompasses the land and water bodies
           that contribute to the flow of water into the Valles Caldera, a large volcanic crater."),
+          tags$div(
+          class = "caption",
+          img(
+            class = "watershed",
+            src = "watershed.png"
+          ),
+          tags$p("NSRW Association")),
         p("The Valles Caldera Watershed plays a crucial role in maintaining the ecological health of the region. It supports diverse habitats, including
           forests, grasslands, wetlands, and streams, which are home to various wildlife species. It also serves as a source of water for downstream
           communities, agricultural activities, or other water-dependent uses."),
