@@ -3,6 +3,7 @@ library(shiny)
 library(ggplot2)
 library(shinythemes)
 library(pryr)
+library(plotly)
 
 
 
@@ -121,6 +122,8 @@ ui <- fluidPage(
         tags$p("Location of Watershed (Bob Parmenter)")
       ),
       
+      # Reset plots button 
+      actionButton("reset_button", "Reset Plots"),
       
       # Buttons to select pre or post fire
       p("Select Pre or Post Fire"),
@@ -213,8 +216,8 @@ ui <- fluidPage(
         
       ),
       # Add placeholders for the plots
-      plotOutput("plot1"),
-      plotOutput("plot2")
+      plotlyOutput("plot1"),
+      plotlyOutput("plot2")
       
     )
   )
@@ -224,96 +227,125 @@ ui <- fluidPage(
 # Server logic ----
 server <- function(input, output, session) {
   #Filter data based on date range input
-  # Pre-fire Turbidity
-  filtered_data <- reactive({
-    subset(pre_fire_turb, datetime_NM >= as.Date(input$date_range[1]) & datetime_NM <= as.Date(input$date_range[2]))
-  })
-  
+# Pre-fire Turbidity
+   filtered_data <- reactive({
+     # Check for valid date range input
+     req(!is.null(input$date_range) && !is.na(input$date_range[1]) && !is.na(input$date_range[2]))
+     subset(pre_fire_turb, datetime_NM >= as.Date(input$date_range[1]) & datetime_NM <= as.Date(input$date_range[2]))
+   })
+
   # Post-fire Turbidity
   filtered_data1 <- reactive({
+    req(!is.null(input$date_range1) && !is.na(input$date_range1[1]) && !is.na(input$date_range1[2]))
     subset(post_fire_turb, datetime_NM >= as.Date(input$date_range1[1]) & datetime_NM <= as.Date(input$date_range1[2]))
   })
-  
+
   # Non-Monsoon Turbidity
   filtered_data2 <- reactive({
+    req(!is.null(input$date_range2) && !is.na(input$date_range2[1]) && !is.na(input$date_range2[2]))
     subset(non_monsoon_turb, datetime_NM >= as.Date(input$date_range2[1]) & datetime_NM <= as.Date(input$date_range2[2]))
   })
-  
+
   # Monsoon Turbidity
   filtered_data3 <- reactive({
+    req(!is.null(input$date_range2) && !is.na(input$date_range2[1]) && !is.na(input$date_range2[2]))
     subset(monsoon_turb, datetime_NM >= as.Date(input$date_range2[1]) & datetime_NM <= as.Date(input$date_range2[2]))
   })
-  
+
   # Pre-fire DO
   filtered_data4 <- reactive({
+    req(!is.null(input$date_range) && !is.na(input$date_range[1]) && !is.na(input$date_range[2]))
     subset(pre_fire_DO, datetime_NM >= as.Date(input$date_range[1]) & datetime_NM <= as.Date(input$date_range[2]))
   })
-  
+
   # Post-fire DO
   filtered_data5 <- reactive({
+    req(!is.null(input$date_range1) && !is.na(input$date_range1[1]) && !is.na(input$date_range1[2]))
     subset(post_fire_DO, datetime_NM >= as.Date(input$date_range1[1]) & datetime_NM <= as.Date(input$date_range1[2]))
   })
-  
+
   # Non-Monsoon DO
   filtered_data6 <- reactive({
+    req(!is.null(input$date_range2) && !is.na(input$date_range2[1]) && !is.na(input$date_range2[2]))
     subset(non_monsoon_DO, datetime_NM >= as.Date(input$date_range2[1]) & datetime_NM <= as.Date(input$date_range2[2]))
   })
-  
+
   # Monsoon DO
   filtered_data7 <- reactive({
+    req(!is.null(input$date_range2) && !is.na(input$date_range2[1]) && !is.na(input$date_range2[2]))
     subset(monsoon_DO, datetime_NM >= as.Date(input$date_range2[1]) & datetime_NM <= as.Date(input$date_range2[2]))
   })
   
   # Define reactive values based on button presses
   # Fire values
-  rv <- reactiveValues(plot_type = "pre-fire")
-  
+  rv <- reactiveValues(plot_type = "pre-fire", reset_flag = FALSE)
+
   observeEvent(input$button, {
     rv$plot_type <- "pre-fire"
   })
-  
+
   observeEvent(input$button1, {
     rv$plot_type <- "post-fire"
   })
-  
+
   # Monsoon Values
-  rv_season <- reactiveValues(plot_type = "non-monsoon")
-  
+  rv_season <- reactiveValues(plot_type = "non-monsoon", reset_flag = FALSE)
+
   observeEvent(input$button2, {
     rv_season$plot_type <- "non-monsoon"
   })
-  
+
   observeEvent(input$button3, {
     rv_season$plot_type <- "monsoon"
   })
   
-  # Update monsoon plots
+  # Reset 
+  observeEvent(input$reset_button, {
+    rv$reset_flag <- TRUE
+    rv_season$reset_flag <- TRUE
+  })
+
+   # Create initial plot objects
+  output$plot1 <- renderPlotly({
+    p <- ggplot(NULL, aes(NULL, NULL)) +
+      theme_void()
+    ggplotly(p)
+  })
+  
+  output$plot2 <- renderPlotly({
+    p <- ggplot(NULL, aes(NULL, NULL)) +
+      theme_void()
+    ggplotly(p)
+  })
+  
+   # Update monsoon plots
   observe({
     # Mem crutch
     gc()
+    
     if (rv_season$plot_type == "non-monsoon") {
-      output$plot1 <- renderPlot({
+      output$plot1 <- renderPlotly({
         ggplot(filtered_data6(), aes(x = datetime_NM, y = DO_perc_sat_Value)) +
           geom_line(color = "darkgreen") +
           ggtitle("Dissolved Oxygen During Non-Monsoon Season") +
           xlab("Date") + ylab("Dissolved Oxygen (% saturation)")
       })
-      
-      output$plot2 <- renderPlot({
+
+      output$plot2 <- renderPlotly({
         ggplot(filtered_data2(), aes(x = datetime_NM, y = Turb_NTU_Value)) +
           geom_line(color = "darkgreen") +
           ggtitle("Turbidity During Non-Monsoon Season") +
           xlab("Date") + ylab("Turbidity (NTU)")
       })
     } else if (rv_season$plot_type == "monsoon") {
-      output$plot1 <- renderPlot({
+      output$plot1 <- renderPlotly({
         ggplot(filtered_data7(), aes(x = datetime_NM, y = DO_perc_sat_Value)) +
           geom_line(color = "darkgreen") +
           ggtitle("Dissolved Oxygen During Monsoon Season") +
           xlab("Date") + ylab("Dissolved Oxygen (% saturation)")
       })
-      
-      output$plot2 <- renderPlot({
+
+      output$plot2 <- renderPlotly({
         ggplot(filtered_data3(), aes(x = datetime_NM, y = Turb_NTU_Value)) +
           geom_line(color = "darkgreen") +
           ggtitle("Turbidity During Monsoon Season") +
@@ -321,34 +353,49 @@ server <- function(input, output, session) {
       })
     }
   })
-  
+
   # Update fire plots
   observe({
     # Mem crutch
     gc()
+    # Reset the plots if the reset button is clicked
+    if (rv$reset_flag) {
+      rv$reset_flag <- FALSE
+      output$plot1 <- renderPlotly({
+        p <- ggplot(NULL, aes(NULL, NULL)) +
+          theme_void()
+        ggplotly(p)
+      })
+      output$plot2 <- renderPlotly({
+        p <- ggplot(NULL, aes(NULL, NULL)) +
+          theme_void()
+        ggplotly(p)
+      })
+      return()
+    }
     if (rv$plot_type == "pre-fire") {
-      output$plot1 <- renderPlot({
+      output$plot1 <- renderPlotly({
         ggplot(filtered_data4(), aes(x = datetime_NM, y = DO_perc_sat_Value)) +
           geom_line(color = "darkblue") +
           ggtitle("Pre-Fire Dissolved Oxygen") +
           xlab("Date") + ylab("Dissolved Oxygen (% saturation)")
       })
-      
-      output$plot2 <- renderPlot({
+
+      output$plot2 <- renderPlotly({
         ggplot(filtered_data(), aes(x = datetime_NM, y = Turb_NTU_Value)) +
           geom_line(color = "darkblue") +
           ggtitle("Pre-Fire Turbidity") +
           xlab("Date") + ylab("Turbidity (NTU)")
       })
     } else if (rv$plot_type == "post-fire") {
-      output$plot1 <- renderPlot({
+      output$plot1 <- renderPlotly({
         ggplot(filtered_data5(), aes(x = datetime_NM, y = DO_perc_sat_Value)) +
           geom_line(color = "darkblue") +
           ggtitle("Post-Fire Dissolved Oxygen") +
           xlab("Date") + ylab("Dissolved Oxygen (% saturation)")
       })
-      
-      output$plot2 <- renderPlot({
+
+      output$plot2 <- renderPlotly({
         ggplot(filtered_data1(), aes(x = datetime_NM, y = Turb_NTU_Value)) +
           geom_line(color = "darkblue") +
           ggtitle("Post-Fire Turbidity") +
